@@ -8,7 +8,7 @@ from dataclasses import dataclass
 # ================= Config Class for all Transformer versions ================ #
 
 
-@dataclass
+@dataclass(frozen=True)
 class TransformerConfig:
     """Configuration class for energy transformer models"""
 
@@ -18,3 +18,7 @@ class TransformerConfig:
     n_head: int
     dropout: float
     ff_hid_factor: int
+    vocab_size: int
+    n_layers: int
+    n_classes: int
+    masked_attention: bool

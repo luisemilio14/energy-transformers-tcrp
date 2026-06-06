@@ -7,7 +7,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.func import grad
+
 from .model_config import TransformerConfig
+from .baseline_transformer import RecursiveCGPT
 
 
 # ======================= Aux LayerNorm implementation ======================= #
@@ -22,7 +24,7 @@ class BareLayerNorm(nn.Module):
 
     def __init__(self, normalized_shape, eps=1e-5):
         super().__init__()
-        self.normalized_shape = tuple(normalized_shape)  # type: ignore[arg-type]
+        self.normalized_shape = normalized_shape
         self.eps = eps
         self.bias = nn.Parameter(torch.zeros(self.normalized_shape))
         self.weight = nn.Parameter(
@@ -46,13 +48,14 @@ class BareLayerNorm(nn.Module):
 class EnergyHead(nn.Module):
     """one head of energy-based self-attention"""
 
-    def __init__(self, config, masked: bool = False):
+    def __init__(self, config):
+        super().__init__()
         # Jh = W^K' @ W^Q in the paper
         self.Jh = nn.Linear(config.n_embed, config.n_embed, bias=False)
 
         self.dropout = nn.Dropout(config.dropout)
 
-        if masked:
+        if config.masked_attention:
             self.register_buffer(
                 "tril",
                 torch.tril(
@@ -100,18 +103,16 @@ class EnergyHead(nn.Module):
             )  # (T, 1)
             logsumexp_wei = logsumexp_wei.masked_fill(all_mask_rows.squeeze(-1), 0.0)
 
-        return logsumexp_wei  # (B, T)
+        return -logsumexp_wei  # (B, T)
 
 
 # -------------------------- Multi-headed attention -------------------------- #
 class MultiHeadEnergyAttention(nn.Module):
     """multiple heads of energy-based self-attention in parallel"""
 
-    def __init__(self, config, masked=False):
+    def __init__(self, config):
         super().__init__()
-        self.heads = nn.ModuleList(
-            [EnergyHead(config, masked=masked) for _ in range(config.n_head)]
-        )
+        self.heads = nn.ModuleList([EnergyHead(config) for _ in range(config.n_head)])
         self.dropout = nn.Dropout(config.dropout)
 
     def forward(self, x):
@@ -178,15 +179,21 @@ class GradFeedForward(GradENet):
 class EnergyTransformerBlock(nn.Module):
     """Energy Transformer block with GradFeedForward"""
 
-    def __init__(self, config):
+    def __init__(self, config: TransformerConfig):
         super().__init__()
-        head_size = config.n_embed // config.n_head
-        self.attn = MultiHeadEnergyAttention(config, head_size)
+        self.attn = MultiHeadEnergyAttention(config)
         self.ffwd = GradFeedForward(config)
         self.ln = BareLayerNorm(config.n_embed)
         self.proj = nn.Linear(config.n_embed, config.n_embed, bias=False)
         self.scale_ff = nn.Parameter(torch.ones(1), requires_grad=True)
 
     def forward(self, x, **kwargs):
+        # Parallel attention: x^{t+1} = x^t + AT(g) + FF(g)
         x = x - self.proj(self.attn(self.ln(x)) + self.scale_ff * self.ffwd(self.ln(x)))
         return x
+
+
+# -------------- Energy-based version of the Recursive GPT class ------------- #s
+class RecursiveNRGPT(RecursiveCGPT):
+    def __init__(self, config: TransformerConfig):
+        super().__init__(config, block_class=EnergyTransformerBlock)

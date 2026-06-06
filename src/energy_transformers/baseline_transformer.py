@@ -17,16 +17,16 @@ from .model_config import TransformerConfig
 class Head(nn.Module):
     """one head of self-attention"""
 
-    def __init__(self, config, masked=False):
+    def __init__(self, config):
         super().__init__()
         self.key = nn.Linear(config.n_embed, config.head_size, bias=False)
         self.query = nn.Linear(config.n_embed, config.head_size, bias=False)
         self.value = nn.Linear(config.n_embed, config.head_size, bias=False)
-
+        self.is_masked = config.masked_attention
         self.dropout = nn.Dropout(config.dropout)
 
         # Set mask if desired
-        if masked:
+        if self.is_masked:
             self.register_buffer(
                 "tril",
                 torch.tril(
@@ -67,11 +67,9 @@ class Head(nn.Module):
 class MultiHeadAttention(nn.Module):
     """multiple heads of self-attention in parallel"""
 
-    def __init__(self, config: TransformerConfig, masked=False):
+    def __init__(self, config: TransformerConfig):
         super().__init__()
-        self.heads = nn.ModuleList(
-            [Head(config, masked=masked) for _ in range(config.n_head)]
-        )
+        self.heads = nn.ModuleList([Head(config) for _ in range(config.n_head)])
         self.proj = nn.Linear(config.head_size * config.n_head, config.n_embed)
         self.dropout = nn.Dropout(config.dropout)
 
@@ -106,12 +104,94 @@ class TransformerBlock(nn.Module):
     def __init__(self, config):
         # n_embed: embedding dimension, n_head: the number of heads we'd like
         super().__init__()
-        head_size = config.n_embed // config.n_head
-        self.sa = MultiHeadAttention(config, head_size)
+        self.sa = MultiHeadAttention(config)
         self.ffwd = FeedForward(config)
         self.ln1 = nn.LayerNorm(config.n_embed)
         self.ln2 = nn.LayerNorm(config.n_embed)
 
     def forward(self, x, **kwargs):
         x = x + self.sa(self.ln1(x)) + self.ffwd(self.ln2(x))
+        return x
+
+
+# -- 'GPT' Net - Transformer + Embedd + Linear, modified for classification -- #
+class ClassifciationGPT(nn.Module):
+    def __init__(self, config: TransformerConfig, block_class=TransformerBlock):
+        super().__init__()
+        self.config = config
+        self.n_layers = config.n_layers
+        self.block_class = block_class
+
+        # Configure embeddings and positional encoding
+        self.token_emb = nn.Embedding(config.vocab_size, config.n_embed)
+        self.position_emb = nn.Embedding(config.sequence_len, config.n_embed)
+        self.register_buffer("pos_idx", torch.arange(config.sequence_len))
+
+        # Build chained transformer blocks
+        self.blocks = self.get_blocks(config)
+
+        # Final layernorm + classification layer
+        # * Why not the BareLayerNorm here?
+        self.norm_f = nn.LayerNorm(config.n_embed)
+        self.lin_f = nn.Linear(config.n_embed, config.n_classes)
+
+        # Initialize weights
+        self.apply(self._init_weights)
+
+    def block_forward(self, x):
+        return self.blocks(x)
+
+    def get_blocks(self, config):
+        return nn.Sequential(
+            *[self.block_class(config) for _ in range(config.n_layers)]
+        )
+
+    def _init_weights(self, module):
+        if isinstance(module, nn.Linear):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+            if module.bias is not None:
+                torch.nn.init.zeros_(module.bias)
+        elif isinstance(module, nn.Embedding):
+            torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
+
+    def forward(self, x, targets=None):
+        B, T = x.shape
+        device = x.device  # For GPU
+
+        # Pass throigh embeddings + posencode
+        tkn_emb = self.token_emb(x)
+        pos_emb = self.position_emb(self.pos_idx[:T])  # TODO understand
+        g = tkn_emb + pos_emb
+
+        # Pass through block
+        g = self.block_forward(g)
+        g = self.norm_f(g)
+        logits = self.lin_f(g)
+
+        # TODO: On debug, check shapes
+        # Calc loss for gradient
+        if targets is None:
+            loss = None
+        else:
+            B, T, C = logits.shape
+            logits = logits.view(B * T, C)
+            targets = targets.view(B * T)
+            loss = F.cross_entropy(logits, targets)
+
+        return logits, loss
+
+
+# ------------------- Recursive Version of the GPT Version ------------------- #
+class RecursiveCGPT(ClassifciationGPT):
+    def __init__(self, config, block_class=TransformerBlock):
+        super().__init__(config, block_class=block_class)
+
+    def get_blocks(self, config):
+        # Only a single block that will be applied recursively
+        return self.block_class(config)
+
+    def block_forward(self, x):
+        B, T, C = x.shape
+        for _ in range(self.n_layers):
+            x = self.blocks(x)
         return x
