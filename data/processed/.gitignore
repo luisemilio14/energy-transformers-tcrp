@@ -1,0 +1,7 @@
+/listops32_tk_train_X.parquet
+/listops32_tk_val_X.parquet
+/listops32_tk_test_X.parquet
+/listops32_tk_train_y.parquet
+/listops32_tk_val_y.parquet
+/listops32_tk_test_y.parquet
+/listops32_dictionary.json

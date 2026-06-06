@@ -1,0 +1,21 @@
+all: 
+  # MLflow configuration for the project.
+  # mlflow_experiment_name: luis-emilio-challenge-v2
+  # mlflow_run_name: hgbt_regression
+  # mlflow_experiment_tags: { "stage": "dev", "version": "v0.2.0" }
+  # mlflow_artifact_location:
+  # mlflow_autolog: false 
+  # random_seed: 2506
+
+listops32:
+  data_processing:
+    raw_train_data_path: data/raw/train-00000-of-00001.parquet
+    raw_val_data_path: data/raw/validation-00000-of-00001.parquet
+    raw_test_data_path: data/raw/test-00000-of-00001.parquet
+    tk_train_data_path: data/processed/listops32_tk_train_X.parquet
+    tk_train_label_path: data/processed/listops32_tk_train_y.parquet
+    tk_val_data_path: data/processed/listops32_tk_val_X.parquet
+    tk_val_label_path: data/processed/listops32_tk_val_y.parquet
+    tk_test_data_path: data/processed/listops32_tk_test_X.parquet
+    tk_test_label_path: data/processed/listops32_tk_test_y.parquet
+    dictionary_path: data/processed/listops32_dictionary.json

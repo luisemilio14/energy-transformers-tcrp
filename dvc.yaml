@@ -1,0 +1,17 @@
+stages:
+  listops32_tokenize:
+    cmd: python3 src/listops_tokenize_data.py --config=params.yaml
+    deps:
+      - src/listops_tokenize_data.py
+      - params.yaml
+      - ${listops32.data_processing.raw_train_data_path}
+      - ${listops32.data_processing.raw_val_data_path}
+      - ${listops32.data_processing.raw_test_data_path}
+    outs:
+      - ${listops32.data_processing.tk_train_data_path}
+      - ${listops32.data_processing.tk_val_data_path}
+      - ${listops32.data_processing.tk_test_data_path}
+      - ${listops32.data_processing.tk_train_label_path}
+      - ${listops32.data_processing.tk_val_label_path}
+      - ${listops32.data_processing.tk_test_label_path}
+      - ${listops32.data_processing.dictionary_path}

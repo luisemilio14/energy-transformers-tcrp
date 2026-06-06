@@ -1,0 +1,54 @@
+schema: '2.0'
+stages:
+  listops32_tokenize:
+    cmd: python3 src/listops_tokenize_data.py --config=params.yaml
+    deps:
+    - path: data/raw/test-00000-of-00001.parquet
+      hash: md5
+      md5: 6d79cd356a7446ecfeff43125f1090f3
+      size: 58599
+    - path: data/raw/train-00000-of-00001.parquet
+      hash: md5
+      md5: 203fb599d96421ba69bdaf294bb83492
+      size: 2775486
+    - path: data/raw/validation-00000-of-00001.parquet
+      hash: md5
+      md5: 77b2d49b48e0b1d44b3dbe543a590126
+      size: 58594
+    - path: params.yaml
+      hash: md5
+      md5: 62bb7dde6d2bf4ec9665d997cc595e24
+      size: 967
+    - path: src/listops_tokenize_data.py
+      hash: md5
+      md5: c93a886c06891f74ec6e06382257a88b
+      size: 2122
+    outs:
+    - path: data/processed/listops32_dictionary.json
+      hash: md5
+      md5: a4a8027bcd0cc081a3be781148fb10ad
+      size: 125
+    - path: data/processed/listops32_tk_test_X.parquet
+      hash: md5
+      md5: f9c354db9df173f4f0614360d21a9fbb
+      size: 127767
+    - path: data/processed/listops32_tk_test_y.parquet
+      hash: md5
+      md5: 3301a489dfa3c8f327f0cefa6476e7fb
+      size: 4368
+    - path: data/processed/listops32_tk_train_X.parquet
+      hash: md5
+      md5: 9ee0a0025c2d23eba32aec058a337500
+      size: 5721722
+    - path: data/processed/listops32_tk_train_y.parquet
+      hash: md5
+      md5: a9b642f82555edf300df56dffa984c34
+      size: 180158
+    - path: data/processed/listops32_tk_val_X.parquet
+      hash: md5
+      md5: 211d07576662f08138d8ab80e70147b6
+      size: 127857
+    - path: data/processed/listops32_tk_val_y.parquet
+      hash: md5
+      md5: b5d4e0ed4d518d8864623cbb70728f48
+      size: 4357
