@@ -4,8 +4,10 @@ Script for downloading and handling the ListOps dataset.
 
 # ================================== Imports ================================= #
 import pandas as pd
+import torch
 
 
+# ============= Main tokenization function for ListOps32 dataset ============= #
 def tokenize_listops32(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     # Extract characters and make a dataframe out of them
     regex_pat = r"[A-Z]+|\d+|[\[\](),]"
@@ -21,6 +23,28 @@ def tokenize_listops32(df: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     return tkX, dictionary
 
 
+# ========================== Data loading utilities ========================== #
+class ListOps32Dataset(torch.utils.data.Dataset):
+    def __init__(self, X, y):
+        self.X = torch.tensor(X.values, dtype=torch.long)
+        self.y = torch.tensor(y.values, dtype=torch.long)
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        return self.X[idx], self.y[idx]
+
+
+def generate_listops32_dataloader(X, y, batch_size, shuffle):
+    dataset = ListOps32Dataset(X, y)
+    dataloader = torch.utils.data.DataLoader(
+        dataset, batch_size=batch_size, shuffle=shuffle
+    )
+    return dataloader
+
+
+# ============================ Auxiliary functions =========================== #
 def separate_data_and_target(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.Series]:
     # Separate target and data
     y = df["Target"]

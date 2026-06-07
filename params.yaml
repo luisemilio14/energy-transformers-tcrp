@@ -1,5 +1,9 @@
+all:
+  model_type: 'base_transformer'
+
 optuna:
   study_name: 'listops32_transformer_hyperparam_opt'
+  n_trials: 100
   pruner:
     type: 'MedianPruner'
     n_warmup_steps: 5
@@ -17,8 +21,25 @@ listops32:
     tk_test_label_path: data/processed/listops32_tk_test_y.parquet
     dictionary_path: data/processed/listops32_dictionary.json
   train_model:
+    # Fixed parameters
+    batch_size: 64
+    n_epochs: 20 # Note: epochs per trial
+    # Optimized learning parameters
+    lr: [0.05, 0.3]
+    lr_warmup_iters: int = 10
+    lr_warmdown_ratio: float = 0.65
+    lr_final_frac: float = 0.05
+    weight_decay: [0.01, 0.1]
+    clip_grad_norm: [0.5, 1.5]
 
+# Model Hyperparameters
+# Can be tuned, but here will be explored as a grid for comparisons
 models:
   base_transformer:
-
+    n_embed: [8, 16, 32, 64, 128]
+    n_heads: [1, 2, 4, 8, 16]
+    n_layers: [1, 2, 4, 8, 12]
   energy_transformer:
+    n_embed: [8, 16, 32, 64, 128]
+    n_heads: [1, 2, 4, 8, 16]
+    n_layers: [1, 2, 4, 8, 12]

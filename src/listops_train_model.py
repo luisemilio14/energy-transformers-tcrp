@@ -2,12 +2,19 @@
 # Standard library imports
 from argparse import ArgumentParser
 import os
+import torch
 import yaml
 
 # Third-party imports
 import optuna
 from optuna.pruners import MedianPruner
 import pandas as pd
+
+# Custom imports
+from data_handling.listops32 import generate_listops32_dataloader
+from training.training import TrainingConfig
+from energy_transformers.baseline_transformer import RecursiveCGPT
+from energy_transformers.energy_transformer import RecursiveNRGPT
 
 
 # ========================== Pipeline function call ========================== #
@@ -16,13 +23,26 @@ def train_listops32_model(config_path) -> None:
     optuna_config = config.get("optuna", {})
     data_config = config.get("listops32", {})["data_processing"]
     train_config = config.get("listops32", {})["train_model"]
-    model_config = config.get("listops32", {})["model_config"]
+    if config.get("all", {}).get("model_type") == "base_transformer":
+        model_config = config.get("models", {})["base_transformer"]
+        model_class = RecursiveCGPT
+    elif config.get("all", {}).get("model_type") == "energy_transformer":
+        model_class = RecursiveNRGPT
+        model_config = config.get("models", {})["energy_transformer"]
+    else:
+        raise ValueError("Invalid model type specified in config")
 
     # Load tokenized data
     xtr = pd.read_parquet(data_config["tk_train_data_path"])
     ytr = pd.read_parquet(data_config["tk_train_label_path"])
     xval = pd.read_parquet(data_config["tk_val_data_path"])
     yval = pd.read_parquet(data_config["tk_val_label_path"])
+
+    batch_size = train_config["batch_size"]
+    train_dataloader = generate_listops32_dataloader(xtr, ytr, batch_size, shuffle=True)
+    val_dataloader = generate_listops32_dataloader(
+        xval, yval, batch_size, shuffle=False
+    )
 
     # Optuna: create pruner
     # TODO: create factory, add more methods
@@ -37,8 +57,24 @@ def train_listops32_model(config_path) -> None:
         storage=os.getenv("STORAGE_NAME"),
     )
 
+    # --- Parsing additional config parameters --- #
+    # Add data-specific parameters to training config
+    train_config["total_dataset_samples"] = len(xtr)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    train_config["device"] = device
+
+    # Add data-specific parameters to model config
+    model_config["sequence_len"] = xtr.shape[1]
+    model_config["vocab_size"] = len(
+        pd.concat([xtr, xval], ignore_index=True).stack().unique()
+    )
+    model_config["n_classes"] = len(
+        pd.concat([ytr, yval], ignore_index=True).stack().unique()
+    )
+
     # Start optimizing
     # TODO
+    # study.optimize()
 
 
 # ============================ Main function call ============================ #
