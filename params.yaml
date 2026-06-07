@@ -24,11 +24,11 @@ listops32:
     # Fixed parameters
     batch_size: 64
     n_epochs: 20 # Note: epochs per trial
+    lr_warmup_iters:  10
+    lr_warmdown_ratio: 0.65
     # Optimized learning parameters
     lr: [0.05, 0.3]
-    lr_warmup_iters: int = 10
-    lr_warmdown_ratio: float = 0.65
-    lr_final_frac: float = 0.05
+    lr_final_frac: [0.01, 0.1]
     weight_decay: [0.01, 0.1]
     clip_grad_norm: [0.5, 1.5]
 

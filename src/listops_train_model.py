@@ -1,18 +1,19 @@
 # ================================== Imports ================================= #
 # Standard library imports
 from argparse import ArgumentParser
+from functools import partial
 import os
-import torch
 import yaml
 
 # Third-party imports
 import optuna
 from optuna.pruners import MedianPruner
 import pandas as pd
+import torch
 
 # Custom imports
 from data_handling.listops32 import generate_listops32_dataloader
-from training.training import TrainingConfig
+from training.training import hyperparameter_optimization
 from energy_transformers.baseline_transformer import RecursiveCGPT
 from energy_transformers.energy_transformer import RecursiveNRGPT
 
@@ -44,19 +45,6 @@ def train_listops32_model(config_path) -> None:
         xval, yval, batch_size, shuffle=False
     )
 
-    # Optuna: create pruner
-    # TODO: create factory, add more methods
-    pruner = MedianPruner(n_warmup_steps=optuna_config["pruner_warmup_steps"])
-
-    # Create study
-    study = optuna.create_study(
-        study_name=optuna_config["study_name"],
-        direction="minimize",
-        load_if_exists=True,
-        pruner=pruner,
-        storage=os.getenv("STORAGE_NAME"),
-    )
-
     # --- Parsing additional config parameters --- #
     # Add data-specific parameters to training config
     train_config["total_dataset_samples"] = len(xtr)
@@ -72,9 +60,33 @@ def train_listops32_model(config_path) -> None:
         pd.concat([ytr, yval], ignore_index=True).stack().unique()
     )
 
-    # Start optimizing
-    # TODO
-    # study.optimize()
+    # --- Optuna optimization setup --- #
+    # Create pruner
+    # TODO: create factory, add more methods
+    pruner = MedianPruner(n_warmup_steps=optuna_config["pruner"]["n_warmup_steps"])
+
+    # Create study
+    study = optuna.create_study(
+        study_name=optuna_config["study_name"],
+        direction="minimize",  # Loss (CrossEntropy)
+        load_if_exists=True,
+        pruner=pruner,
+        # storage=os.getenv("STORAGE_NAME"),
+    )
+    # Define objective function for Optuna optimization
+    objective_fn = partial(
+        hyperparameter_optimization,
+        model_class=model_class,
+        train_data=train_dataloader,
+        val_data=val_dataloader,
+        train_params=train_config,
+        model_params=model_config,
+    )
+    # Start optimizing gogogo
+    study.optimize(
+        objective_fn,
+        n_trials=optuna_config["n_trials"],
+    )
 
 
 # ============================ Main function call ============================ #

@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
+import optuna
 
 from energy_transformers.model_config import TransformerConfig
 from evaluation.evaluate import evaluate_cross_entropy, evaluate_acc
@@ -52,7 +53,7 @@ def train_epoch(model, dataloader, optimizer, lr_scheduler, config: TrainingConf
     model.train()
 
     # Loss histories for logging
-    loss_history = np.zeros(len(dataloader))
+    avg_loss = 0.0
     for batch_idx, (X, y) in enumerate(dataloader):
         X, y = X.to(config.device), y.to(config.device)
         y = y.squeeze()  # Remove extra dimension if present
@@ -72,12 +73,12 @@ def train_epoch(model, dataloader, optimizer, lr_scheduler, config: TrainingConf
         lr_scheduler.step()
 
         # Save for stats
-        loss_history[batch_idx] = loss.item()
+        avg_loss += loss.item()
 
         if batch_idx % config.print_batch_interval == 0:
             print(f"Batch {batch_idx}/{len(dataloader)}, Loss: {loss.item():.4f}")
 
-    return loss_history.mean(), loss_history.std()
+    return avg_loss / len(dataloader)
 
 
 # ======================== Hyperparameter optimization ======================= #
@@ -94,7 +95,11 @@ def hyperparameter_optimization(
     # --- Training Hyperparameters --- #
     if predef_train_config is None:
         # Optimize learning parameters
+        # TODO: handle other parameters, make it more robust for scalars and ranges
         lr = trial.suggest_float("lr", *train_params["lr"])
+        lr_final_frac = trial.suggest_float(
+            "lr_final_frac", *train_params["lr_final_frac"]
+        )
         weight_decay = trial.suggest_float(
             "weight_decay", *train_params["weight_decay"]
         )
@@ -105,11 +110,15 @@ def hyperparameter_optimization(
         train_cfg = TrainingConfig(
             train_data=train_data,
             val_data=val_data,
-            num_epochs=train_params["num_epochs"],
+            num_epochs=train_params["n_epochs"],
             total_dataset_samples=train_params["total_dataset_samples"],
             batch_size=train_params["batch_size"],
             device=train_params["device"],
+            lr_warmup_iters=train_params["lr_warmup_iters"],
+            lr_warmdown_ratio=train_params["lr_warmdown_ratio"],
+            # Optimized hyperparameters
             lr=lr,
+            lr_final_frac=lr_final_frac,
             weight_decay=weight_decay,
             clip_grad_norm=clip_grad_norm,
         )
@@ -119,9 +128,10 @@ def hyperparameter_optimization(
     # --- Model Hyperparameters --- #
     if predef_model_config is None:
         # Search over model hyperparameters
-        n_embed = trial.suggest_int("n_embed", *model_params["n_embed"])
-        n_layers = trial.suggest_int("n_layers", *model_params["n_layers"])
-        n_head = trial.suggest_int("n_head", *model_params["n_head"])
+        # Suggest categorical bc we'll be picking one of a few discrete options
+        n_embed = trial.suggest_categorical("n_embed", model_params["n_embed"])
+        n_layers = trial.suggest_categorical("n_layers", model_params["n_layers"])
+        n_head = trial.suggest_categorical("n_heads", model_params["n_heads"])
 
         # --- Generate model --- #
         model_config = TransformerConfig(
@@ -156,6 +166,25 @@ def hyperparameter_optimization(
     )
 
     # --- Training loop --- #
+    for ep in np.arange(train_cfg.num_epochs):
+        # Train the model for 1 epoch
+        avg_epoch_loss = train_epoch(
+            model, train_cfg.train_data, optimizer, lr_scheduler, train_cfg
+        )
+
+        # Evaluate after every epoch
+        # Since datasets are small, we really dont need intra-epoch evaluation
+        val_acc = evaluate_acc(model, train_cfg.val_data, train_cfg.device)
+        val_loss = evaluate_cross_entropy(model, train_cfg.val_data, train_cfg.device)
+        # TODO: register values on trial for logging
+
+        # Report intermediate results to Optuna for pruning
+        trial.report(val_loss, ep)
+        if trial.should_prune():
+            raise optuna.exceptions.TrialPruned()
+
+    # At end of trial, return final validation loss for optimization
+    return val_loss
 
 
 # ======================= Auxiliary training functions ======================= #

@@ -21,7 +21,6 @@ def evaluate_acc(model, dataloader, device):
 def evaluate_cross_entropy(model, dataloader, device):
     model.eval()
     total_loss = 0.0
-    total_samples = 0
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
@@ -29,5 +28,4 @@ def evaluate_cross_entropy(model, dataloader, device):
             logits = model(X)
             loss = torch.nn.functional.cross_entropy(logits, y)
             total_loss += loss.item()
-            total_samples += y.size(0)
-    return total_loss / total_samples if total_samples > 0 else 0.0
+    return total_loss / len(dataloader) if len(dataloader) > 0 else 0.0
