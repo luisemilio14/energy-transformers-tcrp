@@ -159,26 +159,20 @@ class ClassifciationGPT(nn.Module):
         device = x.device  # For GPU
 
         # Pass throigh embeddings + posencode
-        tkn_emb = self.token_emb(x)
-        pos_emb = self.position_emb(self.pos_idx[:T])  # TODO understand
-        g = tkn_emb + pos_emb
+        # D = n_embed
+        tkn_emb = self.token_emb(x)  # B, T, D
+        # TODO understand positional encodings
+        pos_emb = self.position_emb(self.pos_idx[:T])  # T, D
+        g = tkn_emb + pos_emb  # B, T, D
 
         # Pass through block
         g = self.block_forward(g)
         g = self.norm_f(g)
-        logits = self.lin_f(g)
+        # Slice to get only the classes
+        g_slice = g[:, -1, :]  # B, D
+        logits = self.lin_f(g_slice)  # B, n_classes
 
-        # TODO: On debug, check shapes
-        # Calc loss for gradient
-        if targets is None:
-            loss = None
-        else:
-            B, T, C = logits.shape
-            logits = logits.view(B * T, C)
-            targets = targets.view(B * T)
-            loss = F.cross_entropy(logits, targets)
-
-        return logits, loss
+        return logits
 
 
 # ------------------- Recursive Version of the GPT Version ------------------- #

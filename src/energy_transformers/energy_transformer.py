@@ -3,6 +3,8 @@ Implements Energy Transformer architecture, based on the NRGPT paper
 """
 
 # ================================== Imports ================================= #
+import numbers
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -24,7 +26,10 @@ class BareLayerNorm(nn.Module):
 
     def __init__(self, normalized_shape, eps=1e-5):
         super().__init__()
-        self.normalized_shape = normalized_shape
+        if isinstance(normalized_shape, numbers.Integral):
+            # mypy error: incompatible types in assignment
+            normalized_shape = (normalized_shape,)  # type: ignore[assignment]
+        self.normalized_shape = tuple(normalized_shape)  # type: ignore[arg-type]
         self.eps = eps
         self.bias = nn.Parameter(torch.zeros(self.normalized_shape))
         self.weight = nn.Parameter(
