@@ -1,11 +1,8 @@
-all: 
-  # MLflow configuration for the project.
-  # mlflow_experiment_name: luis-emilio-challenge-v2
-  # mlflow_run_name: hgbt_regression
-  # mlflow_experiment_tags: { "stage": "dev", "version": "v0.2.0" }
-  # mlflow_artifact_location:
-  # mlflow_autolog: false 
-  # random_seed: 2506
+optuna:
+  study_name: 'listops32_transformer_hyperparam_opt'
+  pruner:
+    type: 'MedianPruner'
+    n_warmup_steps: 5
 
 listops32:
   data_processing:
@@ -19,3 +16,9 @@ listops32:
     tk_test_data_path: data/processed/listops32_tk_test_X.parquet
     tk_test_label_path: data/processed/listops32_tk_test_y.parquet
     dictionary_path: data/processed/listops32_dictionary.json
+  train_model:
+
+models:
+  base_transformer:
+
+  energy_transformer:

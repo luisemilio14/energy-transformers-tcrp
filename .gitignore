@@ -1,3 +1,11 @@
+# My stuff
+
+# Secrets
+credentials.json
+token.json
+.env
+
+# Git defaults for Python
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
