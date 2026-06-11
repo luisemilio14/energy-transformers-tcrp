@@ -1,4 +1,6 @@
 # My stuff
+sandbox/
+.vscode/
 
 # Secrets
 credentials.json
