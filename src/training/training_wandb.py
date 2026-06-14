@@ -160,6 +160,8 @@ def train(
         # TODO: register optimizer and lr scheduler artifacts
 
         # --- Training loop --- #
+        best_val_acc = 0.0
+        best_model_state = None
         for ep in np.arange(train_cfg.num_epochs):
             # Train the model for 1 epoch
             avg_epoch_loss = train_epoch(
@@ -182,6 +184,26 @@ def train(
                     "val_loss": val_loss,
                 }
             )
+
+            # Save best model
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
+                best_model_state = model.state_dict()
+
+        # Save model, optimizer and lr scheduler artifacts
+        artifact = wandb.Artifact(
+            f"model-{wandb.run.id}",
+            type="model",
+            description=f"{model_class.__name__} for the experiment where multiple model sizes are tested. See metadata for hyperparameters.",
+            metadata={
+                "model_class": model_class.__name__,
+                "model_config": model_config.__dict__,
+                "train_config": train_cfg.__dict__,
+            },
+        )
+        torch.save(best_model_state, "model.pth")
+        artifact.add_file("model.pth")
+        wandb.log_artifact(artifact)
 
 
 # ======================= Auxiliary training functions ======================= #

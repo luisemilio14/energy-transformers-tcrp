@@ -2,6 +2,8 @@
 sandbox/
 .vscode/
 wandb/
+artifacts/
+**/*.pth
 
 # Secrets
 credentials.json
