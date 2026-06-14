@@ -1,0 +1,48 @@
+# ============================== General Configs ============================= #
+method: random
+metric: 
+  name: train_loss
+  goal: minimize
+
+# ================================ Parameters ================================ #
+parameters:
+# ------------------------- Training Hyperparameters ------------------------- #
+  batch_size:
+    # Fixed batch size
+    value: 64
+  n_epochs: 
+    value: 20 # Note: epochs per trial
+  lr_warmup_iters:  
+    value: 10
+  lr_warmdown_ratio: 
+    value: 0.65
+  # ------------------------- Training Hyperparameters ------------------------- #
+  lr: 
+    distribution: log_uniform_values
+    min: 0.05
+    max: 0.3
+  lr_final_frac: 
+    distribution: log_uniform_values
+    min: 0.01
+    max: 0.1
+  weight_decay: 
+    distribution: log_uniform_values
+    min: 0.01
+    max: 0.1
+  clip_grad_norm: 
+    distribution: uniform
+    min: 0.5
+    max: 1.5
+# --------------------------- Model Hyperparameters -------------------------- #
+  n_embed: 
+    values: [8, 16, 32, 64, 128]
+  n_head: 
+    values: [1, 2, 4, 8, 16]
+  n_layers: 
+    values: [1, 2, 4, 8, 12]
+  sequence_len:
+    value: 39
+  vocab_size:
+    value: 17
+  n_classes:
+    value: 10

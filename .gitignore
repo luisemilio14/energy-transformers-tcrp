@@ -1,6 +1,7 @@
 # My stuff
 sandbox/
 .vscode/
+wandb/
 
 # Secrets
 credentials.json

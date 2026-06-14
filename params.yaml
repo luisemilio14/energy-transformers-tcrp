@@ -1,6 +1,12 @@
 all:
+  project_name: 'listops32_nrgpt'
   model_type: 'base_transformer'
+  device: 'cpu'
+  n_trials: 5
+  wandb_config_file: 'wandb_config.yaml'
+  optuna_config_file: 'optuna_config.yaml'
 
+# TODO: refactor into separate file
 optuna:
   study_name: 'listops32_transformer_hyperparam_opt'
   n_trials: 100
@@ -20,6 +26,7 @@ listops32:
     tk_test_data_path: data/processed/listops32_tk_test_X.parquet
     tk_test_label_path: data/processed/listops32_tk_test_y.parquet
     dictionary_path: data/processed/listops32_dictionary.json
+  # TODO: remove, refactor into file. Leaving for backward compat.
   train_model:
     # Fixed parameters
     batch_size: 64
@@ -32,6 +39,7 @@ listops32:
     weight_decay: [0.01, 0.1]
     clip_grad_norm: [0.5, 1.5]
 
+# TODO: remove, refactor into file. Leaving for backward compat.
 # Model Hyperparameters
 # Can be tuned, but here will be explored as a grid for comparisons
 models:
