@@ -35,6 +35,14 @@ def train_listops32_model_combinations(config_path) -> None:
     wandb_path = config.get("all", {}).get("wandb_config_file", "wandb_config.yaml")
     wandb_config = yaml.safe_load(open(wandb_path, "r"))
 
+    # Get device
+    if config["all"]["device"] == "cuda":
+        device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+    else:
+        device = torch.device("cpu")
+
     # Create dataloaders
     xtr = pd.read_parquet(data_config["tk_train_data_path"])
     ytr = pd.read_parquet(data_config["tk_train_label_path"])
@@ -44,11 +52,27 @@ def train_listops32_model_combinations(config_path) -> None:
     yte = pd.read_parquet(data_config["tk_test_label_path"])
 
     batch_size = wandb_config["parameters"]["batch_size"]["value"]
-    train_dataloader = generate_listops32_dataloader(xtr, ytr, batch_size, shuffle=True)
-    val_dataloader = generate_listops32_dataloader(
-        xval, yval, batch_size, shuffle=False
+    train_dataloader = generate_listops32_dataloader(
+        xtr,
+        ytr,
+        batch_size,
+        shuffle=True,
+        device=device,
     )
-    test_dataloader = generate_listops32_dataloader(xte, yte, batch_size, shuffle=False)
+    val_dataloader = generate_listops32_dataloader(
+        xval,
+        yval,
+        yval.shape[0],  # Use full val set for evaluation
+        shuffle=False,
+        device=device,
+    )
+    test_dataloader = generate_listops32_dataloader(
+        xte,
+        yte,
+        yte.shape[0],  # Use full test set for evaluation
+        shuffle=False,
+        device=device,
+    )
 
     # Get model
     if config["all"]["model_type"] == "base_transformer":
@@ -63,15 +87,7 @@ def train_listops32_model_combinations(config_path) -> None:
     # n_head = [1, 2, 4, 8, 16, 32]
     n_head = [1, 2, 4]
     # n_layers = [1, 2, 4, 8]
-    n_layers = [1, 8]
-
-    # Get device
-    if config["all"]["device"] == "cuda":
-        device = (
-            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        )
-    else:
-        device = torch.device("cpu")
+    n_layers = [1]
 
     # Iterate through different model combinations and train
     project_name = config.get("all", {}).get("project_name")
@@ -88,6 +104,7 @@ def train_listops32_model_combinations(config_path) -> None:
             device=device,
             train_data=train_dataloader,
             val_data=val_dataloader,
+            print_batch_interval=len(train_dataloader) // 4,  # Print 4x per epoch
         )
         wandb.agent(sweep_id, function=train_wrapper, count=config["all"]["n_trials"])
 

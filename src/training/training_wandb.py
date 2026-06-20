@@ -95,6 +95,7 @@ def train(
     val_data: DataLoader = DataLoader([]),
     predef_train_config: TrainingConfig | None = None,
     predef_model_config: TransformerConfig | None = None,
+    print_batch_interval=100,
 ):
     with wandb.init(config=config):
         config = wandb.config
@@ -129,6 +130,7 @@ def train(
                 lr_final_frac=lr_final_frac,
                 weight_decay=weight_decay,
                 clip_grad_norm=clip_grad_norm,
+                print_batch_interval=print_batch_interval,
             )
         else:
             train_cfg = predef_train_config
@@ -182,7 +184,7 @@ def train(
             optimizer, lambda it: linear_learnrate_scheduler(it, train_cfg)
         )
         # Initialize GradScaler for automatic mixed precision
-        scaler = GradScaler() if device.type == "cuda" else None
+        scaler = GradScaler()
         # TODO: register optimizer and lr scheduler artifacts
 
         # --- Training loop --- #

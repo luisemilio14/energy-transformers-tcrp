@@ -28,8 +28,8 @@ parameters:
   # ------------------------- Training Hyperparameters ------------------------- #
   lr: 
     distribution: log_uniform_values
-    min: 0.05
-    max: 0.3
+    min: 0.005
+    max: 0.1
   lr_final_frac: 
     distribution: log_uniform_values
     min: 0.01

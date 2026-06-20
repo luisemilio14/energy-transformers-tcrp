@@ -3,6 +3,8 @@ Script for downloading and handling the ListOps dataset.
 """
 
 # ================================== Imports ================================= #
+import os
+
 import pandas as pd
 import torch
 
@@ -36,16 +38,28 @@ class ListOps32Dataset(torch.utils.data.Dataset):
         return self.X[idx], self.y[idx]
 
 
-def generate_listops32_dataloader(X, y, batch_size, shuffle, num_workers=8):
+def generate_listops32_dataloader(
+    X, y, batch_size, shuffle, num_workers=8, device=None
+):
     dataset = ListOps32Dataset(X, y)
-    dataloader = torch.utils.data.DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        pin_memory=True,
-        drop_last=True,
-    )
+
+    if device is not None and device.type == "cuda":
+        num_workers = 4
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            num_workers=num_workers,
+            pin_memory=True,  # good for gpu
+            drop_last=True,
+        )
+    else:  # For CPU, use fewer workers to avoid overhead
+        dataloader = torch.utils.data.DataLoader(
+            dataset,
+            batch_size=batch_size,
+            shuffle=shuffle,
+            drop_last=True,
+        )
     return dataloader
 
 
