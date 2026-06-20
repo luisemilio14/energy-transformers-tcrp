@@ -7,10 +7,11 @@ method: random
 metric: 
   name: train_loss
   goal: minimize
-# early_terminate:
-#   type: hyperband
-#   min_iter: 10
-#   eta: 3
+early_terminate:
+  type: hyperband
+  min_iter: 10
+  max_iter: 30
+  eta: 3
 
 # ================================ Parameters ================================ #
 parameters:
