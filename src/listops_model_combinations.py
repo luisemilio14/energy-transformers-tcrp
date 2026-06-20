@@ -57,8 +57,11 @@ def train_listops32_model_combinations(config_path) -> None:
         model_class = RecursiveNRGPT  # Energy transformer
 
     # Set up different model combinations to train
-    n_embed = [16, 32, 64, 128, 256, 512]
-    n_head = [1, 2, 4, 8, 16, 32]
+    # n_embed = [16, 32, 64, 128, 256, 512]
+    n_embed = [16, 32, 64]
+    # n_head = [1, 2, 4, 8, 16, 32]
+    # n_head = [1, 2, 4, 8, 16, 32]
+    n_head = [1, 2, 4]
     n_layers = [1, 2, 4, 8]
 
     # Get device

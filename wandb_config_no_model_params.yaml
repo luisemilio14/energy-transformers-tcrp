@@ -15,7 +15,7 @@ parameters:
     # Fixed batch size
     value: 64
   n_epochs: 
-    value: 1 # Note: epochs per trial
+    value: 20 # Note: epochs per trial
   lr_warmup_iters:  
     value: 10
   lr_warmdown_ratio: 
