@@ -9,6 +9,7 @@ import numpy as np
 from optuna import trial
 import torch
 from torch.utils.data import DataLoader
+from torch.amp import autocast, GradScaler
 import wandb
 
 from energy_transformers.model_config import TransformerConfig
@@ -23,6 +24,7 @@ def train_epoch(
     optimizer: torch.optim.Optimizer,
     lr_scheduler: torch.optim.lr_scheduler.LRScheduler,
     config: TrainingConfig,
+    scaler: GradScaler | None = None,
 ) -> float:
     """Train the model for one epoch and return the average loss.
 
@@ -32,6 +34,7 @@ def train_epoch(
         optimizer: The optimizer to use for training.
         lr_scheduler: Learning rate scheduler to step after each batch.
         config: TrainingConfig containing training hyperparameters and settings.
+        scaler: GradScaler for automatic mixed precision. If None, AMP is disabled.
     """
     # Enable training
     model.train()
@@ -42,18 +45,30 @@ def train_epoch(
         X, y = X.to(config.device), y.to(config.device)
         y = y.squeeze()  # Remove extra dimension if present
 
-        # Forward pass
-        logits = model(X)
-        loss = torch.nn.functional.cross_entropy(logits, y)
-
-        # Backward pass and optimization
         optimizer.zero_grad(set_to_none=True)
-        loss.backward()
-        # Clip gradients
-        torch.nn.utils.clip_grad_norm_(
-            model.parameters(), max_norm=config.clip_grad_norm
-        )
-        optimizer.step()
+
+        # Forward and backward with optional AMP
+        if scaler is not None:
+            with autocast(device_type="cuda", dtype=torch.float16):
+                logits = model(X)
+                loss = torch.nn.functional.cross_entropy(logits, y)
+
+            scaler.scale(loss).backward()
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(), max_norm=config.clip_grad_norm
+            )
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            logits = model(X)
+            loss = torch.nn.functional.cross_entropy(logits, y)
+
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(
+                model.parameters(), max_norm=config.clip_grad_norm
+            )
+            optimizer.step()
+
         lr_scheduler.step()
 
         # Log batch loss
@@ -147,6 +162,12 @@ def train(
 
         # --- Generate model --- #
         model = model_class(model_config).to(device)
+
+        # Apply DataParallel if multiple GPUs are available
+        if device.type == "cuda" and torch.cuda.device_count() > 1:
+            model = torch.nn.DataParallel(model)
+            print(f"Using DataParallel with {torch.cuda.device_count()} GPUs")
+
         model_size = sum(p.numel() for p in model.parameters())
         wandb.log({"model_size": model_size})
 
@@ -157,6 +178,8 @@ def train(
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lambda it: linear_learnrate_scheduler(it, train_cfg)
         )
+        # Initialize GradScaler for automatic mixed precision
+        scaler = GradScaler() if device.type == "cuda" else None
         # TODO: register optimizer and lr scheduler artifacts
 
         # --- Training loop --- #
@@ -165,7 +188,7 @@ def train(
         for ep in np.arange(train_cfg.num_epochs):
             # Train the model for 1 epoch
             avg_epoch_loss = train_epoch(
-                model, train_cfg.train_data, optimizer, lr_scheduler, train_cfg
+                model, train_cfg.train_data, optimizer, lr_scheduler, train_cfg, scaler
             )
 
             # Evaluate after every epoch
