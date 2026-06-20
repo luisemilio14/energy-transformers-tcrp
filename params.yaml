@@ -1,7 +1,7 @@
 all:
   project_name: 'listops32_nrgpt'
   model_type: 'base_transformer'
-  device: 'cpu'
+  device: 'cuda'
   n_trials: 1
   wandb_config_file: 'wandb_config_no_model_params.yaml'
   optuna_config_file: 'optuna_config.yaml'
@@ -30,7 +30,7 @@ listops32:
   train_model:
     # Fixed parameters
     batch_size: 64
-    n_epochs: 20 # Note: epochs per trial
+    n_epochs: 1 # Note: epochs per trial
     lr_warmup_iters:  10
     lr_warmdown_ratio: 0.65
     # Optimized learning parameters

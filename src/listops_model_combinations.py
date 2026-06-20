@@ -61,7 +61,12 @@ def train_listops32_model_combinations(config_path) -> None:
     n_layers = [1, 2, 4, 8, 12]
 
     # Get device
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if config["all"]["device"] == "cuda":
+        device = (
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+        )
+    else:
+        device = torch.device("cpu")
 
     # Iterate through different model combinations and train
     project_name = config.get("all", {}).get("project_name")
