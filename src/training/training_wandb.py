@@ -25,6 +25,7 @@ def train_epoch(
     lr_scheduler: torch.optim.lr_scheduler.LRScheduler,
     config: TrainingConfig,
     scaler: GradScaler | None = None,
+    log_batch_loss=False,
 ) -> float:
     """Train the model for one epoch and return the average loss.
 
@@ -73,7 +74,8 @@ def train_epoch(
         lr_scheduler.step()
 
         # Log batch loss
-        wandb.log({"batch_loss": loss.item()})
+        if log_batch_loss:
+            wandb.log({"batch_loss": loss.item()})
 
         # Save for stats
         avg_loss += loss.item()
@@ -206,7 +208,8 @@ def train(
                     "train_loss": avg_epoch_loss,
                     "val_acc": val_acc,
                     "val_loss": val_loss,
-                }
+                },
+                step=ep,
             )
 
             # Save best model

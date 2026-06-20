@@ -3,19 +3,22 @@
 ## * trained.
 
 # ============================== General Configs ============================= #
-method: random
+method: bayes
 metric: 
   name: train_loss
   goal: minimize
-
+early_terminate:
+  type: hyperband
+  min_iter: 10
+  eta: 3
 # ================================ Parameters ================================ #
 parameters:
 # ------------------------- Training Hyperparameters ------------------------- #
   batch_size:
     # Fixed batch size
-    value: 256
+    value: 4096
   n_epochs: 
-    value: 2 # Note: epochs per trial
+    value: 30 # Note: epochs per trial
   lr_warmup_iters:  
     value: 5
   lr_warmdown_ratio: 
