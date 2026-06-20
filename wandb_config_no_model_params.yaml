@@ -3,14 +3,15 @@
 ## * trained.
 
 # ============================== General Configs ============================= #
-method: bayes
+method: random
 metric: 
   name: train_loss
   goal: minimize
-early_terminate:
-  type: hyperband
-  min_iter: 10
-  eta: 3
+# early_terminate:
+#   type: hyperband
+#   min_iter: 10
+#   eta: 3
+
 # ================================ Parameters ================================ #
 parameters:
 # ------------------------- Training Hyperparameters ------------------------- #
