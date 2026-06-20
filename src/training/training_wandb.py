@@ -147,8 +147,8 @@ def train(
 
         # --- Generate model --- #
         model = model_class(model_config).to(device)
-        # model_size = sum(p.numel() for p in model.parameters())
-        # TODO: log model and training config objects as artifacts
+        model_size = sum(p.numel() for p in model.parameters())
+        wandb.log({"model_size": model_size})
 
         # --- Optimizer and LR scheduler --- #
         optimizer = torch.optim.AdamW(

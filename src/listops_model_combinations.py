@@ -2,6 +2,7 @@
 # Standard library imports
 from argparse import ArgumentParser
 from functools import partial
+import itertools
 import os
 
 # Third-party imports
@@ -56,9 +57,9 @@ def train_listops32_model_combinations(config_path) -> None:
         model_class = RecursiveNRGPT  # Energy transformer
 
     # Set up different model combinations to train
-    n_embed = [16, 32, 64, 128, 256]
-    n_head = [1, 2, 4, 8, 16]
-    n_layers = [1, 2, 4, 8, 12]
+    n_embed = [16, 32, 64, 128, 256, 512]
+    n_head = [1, 2, 4, 8, 16, 32]
+    n_layers = [1, 2, 4, 8]
 
     # Get device
     if config["all"]["device"] == "cuda":
@@ -70,7 +71,7 @@ def train_listops32_model_combinations(config_path) -> None:
 
     # Iterate through different model combinations and train
     project_name = config.get("all", {}).get("project_name")
-    for emb, head, layer in zip(n_embed, n_head, n_layers):
+    for emb, head, layer in itertools.product(n_embed, n_head, n_layers):
         config_copy = wandb_config.copy()
         config_copy["parameters"].update({"n_embed": {"value": emb}})
         config_copy["parameters"].update({"n_head": {"value": head}})
@@ -98,6 +99,7 @@ def train_listops32_model_combinations(config_path) -> None:
             entity=entity,
             wandb_config=config_copy,
             model_class=model_class,
+            device=device,
         )
         test_acc = evaluate_acc(model, test_dataloader, device)
         test_loss = evaluate_cross_entropy(model, test_dataloader, device)

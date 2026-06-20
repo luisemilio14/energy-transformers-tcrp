@@ -14,7 +14,7 @@ from energy_transformers.energy_transformer import RecursiveNRGPT
 
 # ============================= W&B Model Loading ============================ #
 def get_best_sweep_model(
-    api, sweep_id, project_name, entity, wandb_config, model_class
+    api, sweep_id, project_name, entity, wandb_config, model_class, device=None
 ):
 
     sweep = api.sweep(f"{entity}/{project_name}/{sweep_id}")
@@ -61,4 +61,9 @@ def get_best_sweep_model(
     model.load_state_dict(
         torch.load(weights_path, map_location="cpu", weights_only=True)
     )
+    
+    # Move model to device if specified
+    if device is not None:
+        model = model.to(device)
+    
     return model, best_run
