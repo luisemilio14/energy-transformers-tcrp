@@ -13,9 +13,9 @@ parameters:
 # ------------------------- Training Hyperparameters ------------------------- #
   batch_size:
     # Fixed batch size
-    value: 128
+    value: 256
   n_epochs: 
-    value: 20 # Note: epochs per trial
+    value: 2 # Note: epochs per trial
   lr_warmup_iters:  
     value: 5
   lr_warmdown_ratio: 

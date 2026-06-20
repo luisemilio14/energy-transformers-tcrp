@@ -42,7 +42,8 @@ def train_epoch(
     # Loss histories for logging
     avg_loss = 0.0
     for batch_idx, (X, y) in enumerate(dataloader):
-        X, y = X.to(config.device), y.to(config.device)
+        X = X.to(config.device, non_blocking=True)
+        y = y.to(config.device, non_blocking=True)
         y = y.squeeze()  # Remove extra dimension if present
 
         optimizer.zero_grad(set_to_none=True)
@@ -211,7 +212,11 @@ def train(
             # Save best model
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
-                best_model_state = model.state_dict()
+                # THE FIX: Check if wrapped in DataParallel before saving
+                if isinstance(model, torch.nn.DataParallel):
+                    best_model_state = model.module.state_dict()
+                else:
+                    best_model_state = model.state_dict()
 
         # Save model, optimizer and lr scheduler artifacts
         artifact = wandb.Artifact(

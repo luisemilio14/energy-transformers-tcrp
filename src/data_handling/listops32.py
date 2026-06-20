@@ -36,10 +36,15 @@ class ListOps32Dataset(torch.utils.data.Dataset):
         return self.X[idx], self.y[idx]
 
 
-def generate_listops32_dataloader(X, y, batch_size, shuffle):
+def generate_listops32_dataloader(X, y, batch_size, shuffle, num_workers=8):
     dataset = ListOps32Dataset(X, y)
     dataloader = torch.utils.data.DataLoader(
-        dataset, batch_size=batch_size, shuffle=shuffle
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        num_workers=num_workers,
+        pin_memory=True,
+        drop_last=True,
     )
     return dataloader
 

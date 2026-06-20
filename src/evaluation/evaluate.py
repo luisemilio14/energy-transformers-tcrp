@@ -9,7 +9,7 @@ def evaluate_acc(model, dataloader, device):
     total = 0
     with torch.no_grad():
         for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
+            X, y = X.to(device, non_blocking=True), y.to(device, non_blocking=True)
             y = y.squeeze()  # Remove extra dimension if present
             logits = model(X)
             predicted = torch.argmax(logits, dim=1)
@@ -23,7 +23,7 @@ def evaluate_cross_entropy(model, dataloader, device):
     total_loss = 0.0
     with torch.no_grad():
         for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
+            X, y = X.to(device, non_blocking=True), y.to(device, non_blocking=True)
             y = y.squeeze()  # Remove extra dimension if present
             logits = model(X)
             loss = torch.nn.functional.cross_entropy(logits, y)
