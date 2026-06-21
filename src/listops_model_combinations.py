@@ -52,6 +52,9 @@ def train_listops32_model_combinations(config_path) -> None:
     yte = pd.read_parquet(data_config["tk_test_label_path"])
 
     batch_size = wandb_config["parameters"]["batch_size"]["value"]
+    if batch_size == 0:
+        # If zero, use full training set for batch size
+        batch_size = ytr.shape[0]
     train_dataloader = generate_listops32_dataloader(
         xtr,
         ytr,
