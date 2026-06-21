@@ -207,7 +207,7 @@ def train(
                     "val_acc": val_acc,
                     "val_loss": val_loss,
                 },
-                step=ep,
+                step=ep + 1,
             )
 
             # Save best model

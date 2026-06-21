@@ -57,13 +57,14 @@ def get_best_sweep_model(
 
     # Instantiate empty model and load weights
     model = model_class(model_config)
-    weights_path = f"{download_dir}/model.pth"
+    unique_model_path = f"model_{best_run.id}.pth"
+    weights_path = f"{download_dir}/{unique_model_path}"
     model.load_state_dict(
         torch.load(weights_path, map_location="cpu", weights_only=True)
     )
-    
+
     # Move model to device if specified
     if device is not None:
         model = model.to(device)
-    
+
     return model, best_run
