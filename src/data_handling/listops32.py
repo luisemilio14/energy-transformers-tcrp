@@ -44,7 +44,6 @@ def generate_listops32_dataloader(
     dataset = ListOps32Dataset(X, y)
 
     if device is not None and device.type == "cuda":
-        num_workers = 4
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,

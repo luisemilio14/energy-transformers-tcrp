@@ -34,6 +34,9 @@ def run_agent_on_gpu(sweep_id, project_name, gpu_id, trials, config_path, wandb_
     import pandas as pd
     import yaml
 
+    # Test - limiting cpu usage for each agent
+    torch.set_num_threads(2)
+
     # Get gpu and config
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     config = yaml.safe_load(open(config_path, "r"))
@@ -56,6 +59,7 @@ def run_agent_on_gpu(sweep_id, project_name, gpu_id, trials, config_path, wandb_
         batch_size,
         shuffle=True,
         device=device,
+        num_workers=1,
     )
     val_dataloader = generate_listops32_dataloader(
         xval,
@@ -63,6 +67,7 @@ def run_agent_on_gpu(sweep_id, project_name, gpu_id, trials, config_path, wandb_
         yval.shape[0],  # Use full val set for evaluation
         shuffle=False,
         device=device,
+        num_workers=1,
     )
 
     # Get model
@@ -186,6 +191,7 @@ def train_listops32_parallel_model_comb(config_path) -> None:
             yte.shape[0],  # Use full test set for evaluation
             shuffle=False,
             device=device,
+            num_workers=1,
         )
         test_acc = evaluate_acc(model, test_dataloader, device)
         test_loss = evaluate_cross_entropy(model, test_dataloader, device)
