@@ -123,7 +123,7 @@ def train_listops32_parallel_model_comb(config_path) -> None:
     n_embed = [128, 256, 512]
     # n_head = [1, 2, 4, 8, 16, 32]
     # n_head = [1, 2, 4, 8, 16, 32]
-    n_head = [1, 2, 4]
+    n_head = [8]
     # n_layers = [1, 2, 4, 8]
     n_layers = [1]
 

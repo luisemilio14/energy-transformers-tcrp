@@ -3,9 +3,9 @@
 ## * trained.
 
 # ============================== General Configs ============================= #
-method: random
+method: bayes
 metric: 
-  name: train_loss
+  name: val_loss
   goal: minimize
 early_terminate:
   type: hyperband
