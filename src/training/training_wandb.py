@@ -4,6 +4,7 @@ Functions to handle model training and logging.
 
 # ================================== Imports ================================= #
 from dataclasses import dataclass
+import os
 
 import numpy as np
 from optuna import trial
@@ -215,19 +216,28 @@ def train(
                 best_model_state = model.state_dict()
 
         # Save model, optimizer and lr scheduler artifacts
+        # Ensure the filename is totally unique to this parallel process
+        unique_model_path = f"model_{wandb.run.id}.pth"
+
+        # Save model, optimizer and lr scheduler artifacts
         artifact = wandb.Artifact(
             f"model-{wandb.run.id}",
             type="model",
-            description=f"{model_class.__name__} for the experiment where multiple model sizes are tested. See metadata for hyperparameters.",
+            description=f"{model_class.__name__} metadata for hyperparameters.",
             metadata={
                 "model_class": model_class.__name__,
                 "model_config": model_config.__dict__,
                 "train_config": train_cfg.__dict__,
             },
         )
-        torch.save(best_model_state, "model.pth")
-        artifact.add_file("model.pth")
+
+        # Save and upload using the unique name
+        torch.save(best_model_state, unique_model_path)
+        artifact.add_file(unique_model_path)
         wandb.log_artifact(artifact)
+
+        if os.path.exists(unique_model_path):
+            os.remove(unique_model_path)
 
 
 # ======================= Auxiliary training functions ======================= #
