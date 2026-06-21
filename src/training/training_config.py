@@ -38,6 +38,11 @@ class TrainingConfig:
     # Post init auto calculation
     def __post_init__(self):
         if self.total_dataset_samples is not None and self.batch_size is not None:
-            self.total_train_iterations = (
-                self.total_dataset_samples * self.num_epochs
-            ) // self.batch_size
+            if self.batch_size == 0:
+                # If batch size is zero, treat as full-batch training
+                self.total_train_iterations = self.num_epochs
+            else:
+                # Total iter = dataset size * epochs / batch size
+                self.total_train_iterations = (
+                    self.total_dataset_samples * self.num_epochs
+                ) // self.batch_size

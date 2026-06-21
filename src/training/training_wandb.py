@@ -168,11 +168,6 @@ def train(
         # --- Generate model --- #
         model = model_class(model_config).to(device)
 
-        # Apply DataParallel if multiple GPUs are available
-        if device.type == "cuda" and torch.cuda.device_count() > 1:
-            model = torch.nn.DataParallel(model)
-            print(f"Using DataParallel with {torch.cuda.device_count()} GPUs")
-
         model_size = sum(p.numel() for p in model.parameters())
         wandb.log({"model_size": model_size})
 
@@ -217,11 +212,7 @@ def train(
             # Save best model
             if val_acc > best_val_acc:
                 best_val_acc = val_acc
-                # THE FIX: Check if wrapped in DataParallel before saving
-                if isinstance(model, torch.nn.DataParallel):
-                    best_model_state = model.module.state_dict()
-                else:
-                    best_model_state = model.state_dict()
+                best_model_state = model.state_dict()
 
         # Save model, optimizer and lr scheduler artifacts
         artifact = wandb.Artifact(
