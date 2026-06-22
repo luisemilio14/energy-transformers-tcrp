@@ -18,7 +18,7 @@ parameters:
 # ------------------------- Training Hyperparameters ------------------------- #
   batch_size:
     # Value = 0 → Use full training set for batch size
-    value: 4096
+    value: 128
   n_epochs: 
     value: 30 # Note: epochs per trial
   lr_warmup_iters:  

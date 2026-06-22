@@ -125,7 +125,7 @@ def train_listops32_parallel_model_comb(config_path) -> None:
     # n_head = [1, 2, 4, 8, 16, 32]
     n_head = [8]
     # n_layers = [1, 2, 4, 8]
-    n_layers = [1]
+    n_layers = [6]
 
     # Iterate through different model combinations and train
     project_name = config.get("all", {}).get("project_name")

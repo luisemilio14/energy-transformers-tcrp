@@ -19,7 +19,7 @@ class BareLayerNorm(nn.Module):
     """
     LayerNorm but without learnable weights, only bias
 
-    The weights are ommited as a learning parameter since they are absorbed by
+    The weights are omitted as a learning parameter since they are absorbed by
     the other learned parameters of the network, see Section 2.3 of the NRGPT
     paper.
     """
@@ -27,14 +27,15 @@ class BareLayerNorm(nn.Module):
     def __init__(self, normalized_shape, eps=1e-5):
         super().__init__()
         if isinstance(normalized_shape, numbers.Integral):
-            # mypy error: incompatible types in assignment
-            normalized_shape = (normalized_shape,)  # type: ignore[assignment]
-        self.normalized_shape = tuple(normalized_shape)  # type: ignore[arg-type]
+            normalized_shape = (normalized_shape,)
+        self.normalized_shape = tuple(normalized_shape)
         self.eps = eps
+
+        # Keep the learnable bias
         self.bias = nn.Parameter(torch.zeros(self.normalized_shape))
-        self.weight = nn.Parameter(
-            torch.ones(self.normalized_shape), requires_grad=False
-        )
+
+        # REMOVE the frozen weight parameter completely.
+        # It causes AMP CUDA kernel crashes.
 
     def forward(self, x):
         return F.layer_norm(
@@ -42,7 +43,7 @@ class BareLayerNorm(nn.Module):
             normalized_shape=self.normalized_shape,
             eps=self.eps,
             bias=self.bias,
-            weight=self.weight,
+            weight=None,  # Explicitly pass None here
         )
 
 
@@ -188,7 +189,9 @@ class EnergyTransformerBlock(nn.Module):
         super().__init__()
         self.attn = MultiHeadEnergyAttention(config)
         self.ffwd = GradFeedForward(config)
-        self.ln = BareLayerNorm(config.n_embed)
+        # BareLayerNorm is problematic for AMP CUDA kernels, so we use regular LayerNorm here
+        # self.ln = BareLayerNorm(config.n_embed)
+        self.ln = nn.LayerNorm(config.n_embed)
         self.proj = nn.Linear(config.n_embed, config.n_embed, bias=False)
         self.scale_ff = nn.Parameter(torch.ones(1), requires_grad=True)
 
