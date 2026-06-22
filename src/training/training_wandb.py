@@ -14,7 +14,7 @@ from torch.amp import autocast, GradScaler
 import wandb
 
 from energy_transformers.model_config import TransformerConfig
-from evaluation.evaluate import evaluate_cross_entropy, evaluate_acc
+from evaluation.evaluate import evaluate_metrics
 from training.training_config import TrainingConfig
 
 
@@ -194,10 +194,7 @@ def train(
 
             # Evaluate after every epoch
             # Since datasets are small, we really dont need intra-epoch evaluation
-            val_acc = evaluate_acc(model, train_cfg.val_data, train_cfg.device)
-            val_loss = evaluate_cross_entropy(
-                model, train_cfg.val_data, train_cfg.device
-            )
+            val_acc, val_loss = evaluate_metrics(model, val_data, device)
 
             # Log results
             wandb.log(

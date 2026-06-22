@@ -64,7 +64,7 @@ def run_agent_on_gpu(sweep_id, project_name, gpu_id, trials, config_path, wandb_
     val_dataloader = generate_listops32_dataloader(
         xval,
         yval,
-        yval.shape[0],  # Use full val set for evaluation
+        batch_size,
         shuffle=False,
         device=device,
         num_workers=1,
@@ -188,7 +188,7 @@ def train_listops32_parallel_model_comb(config_path) -> None:
         test_dataloader = generate_listops32_dataloader(
             xte,
             yte,
-            yte.shape[0],  # Use full test set for evaluation
+            batch_size=wandb_config["parameters"]["batch_size"]["value"],
             shuffle=False,
             device=device,
             num_workers=1,

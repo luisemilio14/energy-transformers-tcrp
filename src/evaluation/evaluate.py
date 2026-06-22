@@ -53,3 +53,30 @@ def evaluate_cross_entropy(model, dataloader, device):
             loss = torch.nn.functional.cross_entropy(logits, y)
             total_loss += loss.item()
     return total_loss / len(dataloader) if len(dataloader) > 0 else 0.0
+
+
+# Create a single function in your evaluate.py
+def evaluate_metrics(model, dataloader, device):
+    model.eval()
+    total_loss = 0.0
+    correct = 0
+    total = 0
+
+    with torch.no_grad():
+        for X, y in dataloader:
+            X, y = X.to(device), y.to(device)
+            y = y.squeeze()
+
+            with autocast(device_type=device.type, dtype=torch.float16):
+                logits = model(X)
+
+            # 1. Calculate Loss
+            loss = torch.nn.functional.cross_entropy(logits, y)
+            total_loss += loss.item() * X.size(0)
+
+            # 2. Calculate Accuracy
+            predictions = torch.argmax(logits, dim=-1)
+            correct += (predictions == y).sum().item()
+            total += y.size(0)
+
+    return total_loss / len(dataloader), correct / total
