@@ -9,8 +9,8 @@ metric:
   goal: minimize
 early_terminate:
   type: hyperband
-  min_iter: 75
-  max_iter: 500
+  min_iter: 15
+  max_iter: 60
   eta: 2
 
 # ================================ Parameters ================================ #
@@ -20,24 +20,24 @@ parameters:
     # Value = 0 → Use full training set for batch size
     value: 512
   n_epochs: 
-    value: 500 # Note: epochs per trial
+    value: 60 # Note: epochs per trial
   lr_warmup_iters:  
-    value: 50
+    value: 10
   lr_warmdown_ratio: 
     value: 0.65
   # ------------------------- Training Hyperparameters ------------------------- #
   lr: 
     distribution: log_uniform_values
     min: 1e-5
-    max: 1e-2
+    max: 1e-3
   lr_final_frac: 
     distribution: log_uniform_values
     min: 1e-3
     max: 0.1
   weight_decay: 
     distribution: log_uniform_values
-    min: 1e-4
-    max: 1e-2
+    min: 1e-3
+    max: 1e-1
   clip_grad_norm: 
     value: 1.0
 # --------------------------- Model Hyperparameters -------------------------- #
