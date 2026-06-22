@@ -50,14 +50,14 @@ def generate_listops32_dataloader(
             shuffle=shuffle,
             num_workers=num_workers,
             pin_memory=True,  # good for gpu
-            drop_last=True,
+            drop_last=False,
         )
     else:  # For CPU, use fewer workers to avoid overhead
         dataloader = torch.utils.data.DataLoader(
             dataset,
             batch_size=batch_size,
             shuffle=shuffle,
-            drop_last=True,
+            drop_last=False,
         )
     return dataloader
 

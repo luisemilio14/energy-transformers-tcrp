@@ -52,7 +52,7 @@ def evaluate_cross_entropy(model, dataloader, device):
 
             loss = torch.nn.functional.cross_entropy(logits, y)
             total_loss += loss.item()
-    return total_loss / len(dataloader) if len(dataloader) > 0 else 0.0
+    return total_loss / len(dataloader.dataset) if len(dataloader) > 0 else 0.0
 
 
 # Create a single function in your evaluate.py
@@ -79,4 +79,4 @@ def evaluate_metrics(model, dataloader, device):
             correct += (predictions == y).sum().item()
             total += y.size(0)
 
-    return total_loss / len(dataloader), correct / total
+    return total_loss / len(dataloader.dataset), correct / total
