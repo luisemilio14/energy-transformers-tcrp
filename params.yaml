@@ -1,9 +1,9 @@
 all:
-  project_name: 'listops32_nrgpt'
-  model_type: 'energy_transformer'
+  project_name: 'listops32_nrgpt_baseTran'
+  model_type: 'base_transformer'
   device: 'cuda'
   n_gpus: 2
-  n_trials: 10
+  n_trials: 20
   wandb_config_file: 'wandb_config_no_model_params.yaml'
   optuna_config_file: 'optuna_config.yaml'
 

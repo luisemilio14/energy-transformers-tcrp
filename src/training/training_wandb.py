@@ -194,7 +194,7 @@ def train(
 
             # Evaluate after every epoch
             # Since datasets are small, we really dont need intra-epoch evaluation
-            val_acc, val_loss = evaluate_metrics(model, val_data, device)
+            val_loss, val_acc = evaluate_metrics(model, val_data, device)
 
             # Log results
             wandb.log(
