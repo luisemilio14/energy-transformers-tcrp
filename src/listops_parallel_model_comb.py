@@ -120,7 +120,7 @@ def train_listops32_parallel_model_comb(config_path) -> None:
 
     # Set up different model combinations to train
     # n_embed = [16, 32, 64, 128, 256, 512]
-    n_embed = [128]
+    n_embed = [512]
     # n_head = [1, 2, 4, 8, 16, 32]
     # n_head = [1, 2, 4, 8, 16, 32]
     n_head = [8]
