@@ -1,38 +1,41 @@
 # ================================== Imports ================================= #
 # Standard library imports
+import itertools
+import multiprocessing as mp
+import os
 from argparse import ArgumentParser
 from functools import partial
-import itertools
-import os
-import multiprocessing as mp
 
 # Third-party imports
 import pandas as pd
-from dotenv import load_dotenv
-import wandb
 import torch
+import wandb
 import yaml
+from dotenv import load_dotenv
 
 # Custom imports
 from data_handling.listops32 import generate_listops32_dataloader
-from evaluation.evaluate import evaluate_cross_entropy, evaluate_acc
 from energy_transformers.baseline_transformer import RecursiveCGPT
 from energy_transformers.energy_transformer import RecursiveNRGPT
+from evaluation.evaluate import evaluate_acc, evaluate_cross_entropy
 from utils.model_loader import get_best_sweep_model
 
 
 # ============================ Auxiliary functions =========================== #
-def run_agent_on_gpu(sweep_id, project_name, gpu_id, trials, config_path, wandb_config):
+def run_agent_on_gpu(
+    sweep_id, project_name, gpu_id, trials, config_path, wandb_config
+):
     """Isolated process that runs a W&B agent on a specific GPU."""
     # 1. Hide the other GPU from this process
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
 
     # Re-import libraries
+    import pandas as pd
     import torch
+    import yaml
+
     from data_handling.listops32 import generate_listops32_dataloader
     from training.training_wandb import train
-    import pandas as pd
-    import yaml
 
     # Test - limiting cpu usage for each agent
     torch.set_num_threads(2)
@@ -85,7 +88,9 @@ def run_agent_on_gpu(sweep_id, project_name, gpu_id, trials, config_path, wandb_
         val_data=val_dataloader,
         print_batch_interval=max(1, len(train_dataloader) // 4),
     )
-    wandb.agent(sweep_id, function=train_wrapper, count=trials, project=project_name)
+    wandb.agent(
+        sweep_id, function=train_wrapper, count=trials, project=project_name
+    )
 
 
 # ========================== Pipeline function call ========================== #
@@ -99,7 +104,9 @@ def train_listops32_parallel_model_comb(config_path) -> None:
     # Load configs
     config = yaml.safe_load(open(config_path, "r"))
     data_config = config.get("listops32", {})["data_processing"]
-    wandb_path = config.get("all", {}).get("wandb_config_file", "wandb_config.yaml")
+    wandb_path = config.get("all", {}).get(
+        "wandb_config_file", "wandb_config.yaml"
+    )
     wandb_config = yaml.safe_load(open(wandb_path, "r"))
     if config["all"]["model_type"] == "base_transformer":
         model_class = RecursiveCGPT  # Baseline transformer
@@ -109,7 +116,9 @@ def train_listops32_parallel_model_comb(config_path) -> None:
     # Get device
     if config["all"]["device"] == "cuda":
         device = (
-            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+            torch.device("cuda")
+            if torch.cuda.is_available()
+            else torch.device("cpu")
         )
     else:
         device = torch.device("cpu")
@@ -119,9 +128,11 @@ def train_listops32_parallel_model_comb(config_path) -> None:
     yte = pd.read_parquet(data_config["tk_test_label_path"])
 
     # Set up different model combinations to train
-    n_embed = [32, 64, 128, 256, 380, 512]
-    n_head = [1, 2, 8]
-    n_layers = [1, 6, 8]
+    # n_embed = [32, 64, 128, 256, 380]
+    n_embed = [32]
+    # n_head = [1, 2, 4]
+    n_head = [4]
+    n_layers = [1, 6]
 
     # Iterate through different model combinations and train
     project_name = config.get("all", {}).get("project_name")
