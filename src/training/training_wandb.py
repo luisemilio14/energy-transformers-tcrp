@@ -3,15 +3,13 @@ Functions to handle model training and logging.
 """
 
 # ================================== Imports ================================= #
-from dataclasses import dataclass
 import os
 
 import numpy as np
-from optuna import trial
 import torch
-from torch.utils.data import DataLoader
-from torch.amp import autocast, GradScaler
 import wandb
+from torch.amp import GradScaler, autocast
+from torch.utils.data import DataLoader
 
 from energy_transformers.model_config import TransformerConfig
 from evaluation.evaluate import evaluate_metrics
@@ -82,7 +80,9 @@ def train_epoch(
         avg_loss += loss.item()
 
         if batch_idx % config.print_batch_interval == 0:
-            print(f"Batch {batch_idx}/{len(dataloader)}, Loss: {loss.item():.4f}")
+            print(
+                f"Batch {batch_idx}/{len(dataloader)}, Loss: {loss.item():.4f}"
+            )
 
     return avg_loss / len(dataloader)
 
@@ -158,7 +158,8 @@ def train(
                 dropout=0.2,  # Fixed dropout for now
                 ff_hid_factor=4,  # Fixed feedforward hidden size factor for now
                 # Fixed, data-determined parameters
-                masked_attention=True,
+                # masked_attention=True,
+                masked_attention=False,  # Quick n dirty test
                 sequence_len=sequence_len,
                 vocab_size=vocab_size,
                 n_classes=n_classes,
@@ -174,7 +175,9 @@ def train(
 
         # --- Optimizer and LR scheduler --- #
         optimizer = torch.optim.AdamW(
-            model.parameters(), lr=train_cfg.lr, weight_decay=train_cfg.weight_decay
+            model.parameters(),
+            lr=train_cfg.lr,
+            weight_decay=train_cfg.weight_decay,
         )
         lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
             optimizer, lambda it: linear_learnrate_scheduler(it, train_cfg)
@@ -189,7 +192,12 @@ def train(
         for ep in np.arange(train_cfg.num_epochs):
             # Train the model for 1 epoch
             avg_epoch_loss = train_epoch(
-                model, train_cfg.train_data, optimizer, lr_scheduler, train_cfg, scaler
+                model,
+                train_cfg.train_data,
+                optimizer,
+                lr_scheduler,
+                train_cfg,
+                scaler,
             )
 
             # Evaluate after every epoch

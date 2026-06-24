@@ -128,8 +128,10 @@ def train_listops32_parallel_model_comb(config_path) -> None:
     yte = pd.read_parquet(data_config["tk_test_label_path"])
 
     # Set up different model combinations to train
-    n_embed = [32, 64, 128, 256]  # Note: we ran 32 separately
-    n_head = [1, 2, 4]
+    # n_embed = [32, 64, 128, 256]  # Note: we ran 32 separately
+    n_embed = [256]
+    # n_head = [1, 2, 4]
+    n_head = [4]
     n_layers = [6]
 
     # Iterate through different model combinations and train
