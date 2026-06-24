@@ -1,6 +1,6 @@
 all:
-  project_name: 'listops32_nrgpt_baseTran'
-  model_type: 'base_transformer'
+  project_name: 'listops32_nrgpt_nrgTran'
+  model_type: 'energy_transformer'
   device: 'cuda'
   n_gpus: 2
   n_trials: 2
