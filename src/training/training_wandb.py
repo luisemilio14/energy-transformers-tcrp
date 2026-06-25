@@ -155,11 +155,10 @@ def train(
                 n_head=n_head,
                 # Heuristics
                 head_size=n_embed // n_head,
-                dropout=0.2,  # Fixed dropout for now
+                dropout=0.1,  # Fixed dropout for now
                 ff_hid_factor=4,  # Fixed feedforward hidden size factor for now
                 # Fixed, data-determined parameters
-                # masked_attention=True,
-                masked_attention=False,  # Quick n dirty test
+                masked_attention=True,
                 sequence_len=sequence_len,
                 vocab_size=vocab_size,
                 n_classes=n_classes,

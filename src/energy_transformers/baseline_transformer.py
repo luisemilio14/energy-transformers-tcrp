@@ -30,7 +30,8 @@ class Head(nn.Module):
             self.register_buffer(
                 "tril",
                 torch.tril(
-                    torch.ones(config.sequence_len, config.sequence_len), diagonal=0
+                    torch.ones(config.sequence_len, config.sequence_len),
+                    diagonal=0,
                 ),
             )
 
@@ -46,7 +47,9 @@ class Head(nn.Module):
         )  # (B, T, hs) @ (B, hs, T) -> (B, T, T)
         if hasattr(self, "tril"):
             # Apply mask to transformer
-            wei = wei.masked_fill(self.tril[:T, :T] == 0, float("-inf"))  # (B, T, T)
+            wei = wei.masked_fill(
+                self.tril[:T, :T] == 0, float("-inf")
+            )  # (B, T, T)
         wei = F.softmax(wei, dim=-1)  # (B, T, T)
 
         if hasattr(self, "tril"):
@@ -69,7 +72,9 @@ class MultiHeadAttention(nn.Module):
 
     def __init__(self, config: TransformerConfig):
         super().__init__()
-        self.heads = nn.ModuleList([Head(config) for _ in range(config.n_head)])
+        self.heads = nn.ModuleList(
+            [Head(config) for _ in range(config.n_head)]
+        )
         self.proj = nn.Linear(config.head_size * config.n_head, config.n_embed)
         self.dropout = nn.Dropout(config.dropout)
 
@@ -116,7 +121,9 @@ class TransformerBlock(nn.Module):
 
 # -- 'GPT' Net - Transformer + Embedd + Linear, modified for classification -- #
 class ClassifciationGPT(nn.Module):
-    def __init__(self, config: TransformerConfig, block_class=TransformerBlock):
+    def __init__(
+        self, config: TransformerConfig, block_class=TransformerBlock
+    ):
         super().__init__()
         self.config = config
         self.n_layers = config.n_layers
@@ -155,8 +162,7 @@ class ClassifciationGPT(nn.Module):
             torch.nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
     def forward(self, x, targets=None):
-        B, T = x.shape
-        device = x.device  # For GPU
+        _, T = x.shape
 
         # Pass throigh embeddings + posencode
         # D = n_embed
